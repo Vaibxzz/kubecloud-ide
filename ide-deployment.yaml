@@ -1,0 +1,57 @@
+# Persistent storage for the IDE
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ide-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# Deployment for code-server IDE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubecloud-ide
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubecloud-ide
+  template:
+    metadata:
+      labels:
+        app: kubecloud-ide
+    spec:
+      containers:
+      - name: kubecloud-ide
+        image: vaibzzzzz/kubecloud-ide:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PASSWORD
+          value: "supersecurepassword"   # In prod, use a Kubernetes Secret
+        volumeMounts:
+        - mountPath: /home/coder/project
+          name: ide-storage
+      volumes:
+      - name: ide-storage
+        persistentVolumeClaim:
+          claimName: ide-pvc
+
+---
+# Service to expose the IDE inside the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubecloud-ide-service
+spec:
+  selector:
+    app: kubecloud-ide
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
