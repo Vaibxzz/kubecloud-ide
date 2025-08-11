@@ -1,0 +1,2 @@
+cert: /config/localhost.pem
+cert-key: /config/localhost-key.pem
